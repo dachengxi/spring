@@ -499,11 +499,13 @@ public class SqlSessionFactoryBean
         targetConfiguration.getVariables().putAll(this.configurationProperties);
       }
     } else if (this.configLocation != null) {
+      // 创建XMLConfigBuilder对象，读取指定的配置文件
       xmlConfigBuilder = new XMLConfigBuilder(this.configLocation.getInputStream(), null, this.configurationProperties);
       targetConfiguration = xmlConfigBuilder.getConfiguration();
     } else {
       LOGGER.debug(
           () -> "Property 'configuration' or 'configLocation' not specified, using default MyBatis Configuration");
+      // 使用默认的配置对象进行配置
       targetConfiguration = new Configuration();
       Optional.ofNullable(this.configurationProperties).ifPresent(targetConfiguration::setVariables);
     }
@@ -566,6 +568,7 @@ public class SqlSessionFactoryBean
 
     if (xmlConfigBuilder != null) {
       try {
+        // 解析配置文件
         xmlConfigBuilder.parse();
         LOGGER.debug(() -> "Parsed configuration file: '" + this.configLocation + "'");
       } catch (Exception ex) {
@@ -575,6 +578,7 @@ public class SqlSessionFactoryBean
       }
     }
 
+    // 如果没有配置transactionFactory，使用默认的SpringManagedTransactionFactory
     targetConfiguration.setEnvironment(new Environment(this.environment,
         this.transactionFactory == null ? new SpringManagedTransactionFactory() : this.transactionFactory,
         this.dataSource));
@@ -588,6 +592,7 @@ public class SqlSessionFactoryBean
             continue;
           }
           try {
+            // 根据mapperLocations配置，处理映射配置文件以及相应的Mapper接口
             XMLMapperBuilder xmlMapperBuilder = new XMLMapperBuilder(mapperLocation.getInputStream(),
                 targetConfiguration, mapperLocation.toString(), targetConfiguration.getSqlFragments());
             xmlMapperBuilder.parse();

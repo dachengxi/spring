@@ -45,12 +45,24 @@ public class SpringManagedTransaction implements Transaction {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SpringManagedTransaction.class);
 
+  /**
+   * 与当前数据库连接对象关联的数据源对象
+   */
   private final DataSource dataSource;
 
+  /**
+   * 当前事务管理中维护的数据库连接对象
+   */
   private Connection connection;
 
+  /**
+   * 标识该数据库连接对象是否由Spring的事务管理器管理
+   */
   private boolean isConnectionTransactional;
 
+  /**
+   * 事务是否自动提交
+   */
   private boolean autoCommit;
 
   public SpringManagedTransaction(DataSource dataSource) {
@@ -64,6 +76,7 @@ public class SpringManagedTransaction implements Transaction {
   @Override
   public Connection getConnection() throws SQLException {
     if (this.connection == null) {
+      // 获取数据库连接
       openConnection();
     }
     return this.connection;
@@ -77,8 +90,11 @@ public class SpringManagedTransaction implements Transaction {
    * false and will always call commit/rollback so we need to no-op that calls.
    */
   private void openConnection() throws SQLException {
+    // 从Spring事务管理器中获取数据库连接对象
     this.connection = DataSourceUtils.getConnection(this.dataSource);
+    // 记录是否自动提交
     this.autoCommit = this.connection.getAutoCommit();
+    // 记录当前连接是否由Spring事务管理器管理
     this.isConnectionTransactional = DataSourceUtils.isConnectionTransactional(this.connection, this.dataSource);
 
     LOGGER.debug(() -> "JDBC Connection [" + this.connection + "] will"
@@ -90,6 +106,7 @@ public class SpringManagedTransaction implements Transaction {
    */
   @Override
   public void commit() throws SQLException {
+    // 事务不由Spring事务管理器管理并且不需要自动提交时，才在此处真正提交事务
     if (this.connection != null && !this.isConnectionTransactional && !this.autoCommit) {
       LOGGER.debug(() -> "Committing JDBC Connection [" + this.connection + "]");
       this.connection.commit();
@@ -112,6 +129,7 @@ public class SpringManagedTransaction implements Transaction {
    */
   @Override
   public void close() {
+    // 数据库连接归还给Spring事务管理器
     DataSourceUtils.releaseConnection(this.connection, this.dataSource);
   }
 

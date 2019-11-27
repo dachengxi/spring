@@ -73,12 +73,24 @@ import org.springframework.dao.support.PersistenceExceptionTranslator;
  */
 public class SqlSessionTemplate implements SqlSession, DisposableBean {
 
+  /**
+   * 创建SqlSession对象的工厂类
+   */
   private final SqlSessionFactory sqlSessionFactory;
 
+  /**
+   * SqlSession底层使用的Executor类型
+   */
   private final ExecutorType executorType;
 
+  /**
+   * jdk动态代理生成的代理对象
+   */
   private final SqlSession sqlSessionProxy;
 
+  /**
+   * 异常转换器
+   */
   private final PersistenceExceptionTranslator exceptionTranslator;
 
   /**
@@ -127,6 +139,7 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
     this.sqlSessionFactory = sqlSessionFactory;
     this.executorType = executorType;
     this.exceptionTranslator = exceptionTranslator;
+    // 通过jdk动态代理创建SqlSession的代理对象
     this.sqlSessionProxy = (SqlSession) newProxyInstance(SqlSessionFactory.class.getClassLoader(),
         new Class[] { SqlSession.class }, new SqlSessionInterceptor());
   }
@@ -389,7 +402,7 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
 
   /**
    * Allow gently dispose bean:
-   * 
+   *
    * <pre>
    * {@code
    *
@@ -420,15 +433,19 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
   private class SqlSessionInterceptor implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      // 获取SqlSession对象
       SqlSession sqlSession = getSqlSession(SqlSessionTemplate.this.sqlSessionFactory,
           SqlSessionTemplate.this.executorType, SqlSessionTemplate.this.exceptionTranslator);
       try {
+        // 调用SqlSession相应方法
         Object result = method.invoke(sqlSession, args);
+        // 检测事务是否由Spring进行管理，并根据此决定是否提交事务
         if (!isSqlSessionTransactional(sqlSession, SqlSessionTemplate.this.sqlSessionFactory)) {
           // force commit even on non-dirty sessions because some databases require
           // a commit/rollback before calling close()
           sqlSession.commit(true);
         }
+        // 返回数据库操作的相应结果
         return result;
       } catch (Throwable t) {
         Throwable unwrapped = unwrapThrowable(t);
