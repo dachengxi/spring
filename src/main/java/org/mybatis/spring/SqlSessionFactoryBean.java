@@ -84,6 +84,7 @@ import static org.springframework.util.StringUtils.tokenizeToStringArray;
  *
  * @see #setConfigLocation
  * @see #setDataSource
+ * 用来创建SqlSessionFactory
  */
 public class SqlSessionFactoryBean
     implements FactoryBean<SqlSessionFactory>, InitializingBean, ApplicationListener<ApplicationEvent> {
@@ -93,10 +94,16 @@ public class SqlSessionFactoryBean
   private static final ResourcePatternResolver RESOURCE_PATTERN_RESOLVER = new PathMatchingResourcePatternResolver();
   private static final MetadataReaderFactory METADATA_READER_FACTORY = new CachingMetadataReaderFactory();
 
+  /**
+   * mybatis配置文件位置
+   */
   private Resource configLocation;
 
   private Configuration configuration;
 
+  /**
+   * mapper文件位置
+   */
   private Resource[] mapperLocations;
 
   private DataSource dataSource;
@@ -472,6 +479,7 @@ public class SqlSessionFactoryBean
     state((configuration == null && configLocation == null) || !(configuration != null && configLocation != null),
         "Property 'configuration' and 'configLocation' can not specified with together");
 
+    // 创建SqlSessionFactory
     this.sqlSessionFactory = buildSqlSessionFactory();
   }
 
@@ -485,6 +493,7 @@ public class SqlSessionFactoryBean
    * @return SqlSessionFactory
    * @throws Exception
    *           if configuration is failed
+   * 创建SqlSessionFactory实例
    */
   protected SqlSessionFactory buildSqlSessionFactory() throws Exception {
 
@@ -499,13 +508,13 @@ public class SqlSessionFactoryBean
         targetConfiguration.getVariables().putAll(this.configurationProperties);
       }
     } else if (this.configLocation != null) {
-      // 创建XMLConfigBuilder对象，读取指定的配置文件
+      // 创建XMLConfigBuilder对象，读取指定的配置文件，创建Configuration
       xmlConfigBuilder = new XMLConfigBuilder(this.configLocation.getInputStream(), null, this.configurationProperties);
       targetConfiguration = xmlConfigBuilder.getConfiguration();
     } else {
       LOGGER.debug(
           () -> "Property 'configuration' or 'configLocation' not specified, using default MyBatis Configuration");
-      // 使用默认的配置对象进行配置
+      // 没有指定configuration，也没有指定configLocation，则使用默认的配置对象进行配置
       targetConfiguration = new Configuration();
       Optional.ofNullable(this.configurationProperties).ifPresent(targetConfiguration::setVariables);
     }
@@ -566,6 +575,7 @@ public class SqlSessionFactoryBean
 
     Optional.ofNullable(this.cache).ifPresent(targetConfiguration::addCache);
 
+    // 指定了configLocation，需要解析对应的配置文件
     if (xmlConfigBuilder != null) {
       try {
         // 解析配置文件
@@ -583,6 +593,7 @@ public class SqlSessionFactoryBean
         this.transactionFactory == null ? new SpringManagedTransactionFactory() : this.transactionFactory,
         this.dataSource));
 
+    // 处理指定的mapper文件
     if (this.mapperLocations != null) {
       if (this.mapperLocations.length == 0) {
         LOGGER.warn(() -> "Property 'mapperLocations' was specified but matching resources are not found.");
@@ -595,6 +606,10 @@ public class SqlSessionFactoryBean
             // 根据mapperLocations配置，处理映射配置文件以及相应的Mapper接口
             XMLMapperBuilder xmlMapperBuilder = new XMLMapperBuilder(mapperLocation.getInputStream(),
                 targetConfiguration, mapperLocation.toString(), targetConfiguration.getSqlFragments());
+            // 解析mapper文件，这里会将mapper对应接口添加到对应的Mapper注册表中
+            // mybatis会创建和接口对应的MapperProxyFactory，将对应关系放到Mapper注册表中
+            // 应用运行的时候，如果要访问Mapper接口，会通过Mapper注册表获取接口对应的MapperProxyFactory，
+            // MapperProxyFactory的newInstance方法返回MapperProxy实例，然后通过反射调用对应方法
             xmlMapperBuilder.parse();
           } catch (Exception e) {
             throw new NestedIOException("Failed to parse mapping resource: '" + mapperLocation + "'", e);
@@ -608,14 +623,17 @@ public class SqlSessionFactoryBean
       LOGGER.debug(() -> "Property 'mapperLocations' was not specified.");
     }
 
+    // 返回一个DefaultSqlSessionFactory
     return this.sqlSessionFactoryBuilder.build(targetConfiguration);
   }
 
   /**
    * {@inheritDoc}
+   * 获取SqlSessionFactory
    */
   @Override
   public SqlSessionFactory getObject() throws Exception {
+    // 如果sqlSessionFactory为null，先执行afterPropertiesSet来创建SqlSessionFactory
     if (this.sqlSessionFactory == null) {
       afterPropertiesSet();
     }

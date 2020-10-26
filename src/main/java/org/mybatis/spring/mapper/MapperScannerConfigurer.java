@@ -87,6 +87,8 @@ import org.springframework.util.StringUtils;
  *
  * @see MapperFactoryBean
  * @see ClassPathMapperScanner
+ * Mapper扫描、配置
+ * 用来扫描basePackage下面的接口，注册成MapperFactoryBean
  */
 public class MapperScannerConfigurer
     implements BeanDefinitionRegistryPostProcessor, InitializingBean, ApplicationContextAware, BeanNameAware {
@@ -334,10 +336,12 @@ public class MapperScannerConfigurer
    */
   @Override
   public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+    // 处理属性占位符
     if (this.processPropertyPlaceHolders) {
       processPropertyPlaceHolders();
     }
 
+    // 使用ClassPathMapperScanner扫描mapper
     ClassPathMapperScanner scanner = new ClassPathMapperScanner(registry);
     scanner.setAddToConfig(this.addToConfig);
     scanner.setAnnotationClass(this.annotationClass);
@@ -352,7 +356,9 @@ public class MapperScannerConfigurer
     if (StringUtils.hasText(lazyInitialization)) {
       scanner.setLazyInitialization(Boolean.valueOf(lazyInitialization));
     }
+    // 注册过滤器，包括includeFilters和excludeFilters，指明了扫描的时候扫描哪些和排除哪些
     scanner.registerFilters();
+    // 扫描basePackage下的
     scanner.scan(
         StringUtils.tokenizeToStringArray(this.basePackage, ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS));
   }
@@ -362,8 +368,12 @@ public class MapperScannerConfigurer
    * PropertyResourceConfigurers will not have been loaded and any property substitution of this class' properties will
    * fail. To avoid this, find any PropertyResourceConfigurers defined in the context and run them on this class' bean
    * definition. Then update the values.
+   * PropertyResourceConfigurer实现了BeanFactoryPostProcessor接口，执行时机在BeanDefinitionRegistryPostProcessor之后，
+   * 而processPropertyPlaceHolders方法调用却在BeanDefinitionRegistryPostProcessor执行的时候，这时候PropertyResourceConfigurer
+   * 还没被加载，属性的处理就会失败。这里会先从容器中查找PropertyResourceConfigurer，然后执行
    */
   private void processPropertyPlaceHolders() {
+    // 从容器中获取PropertyResourceConfigurer类型的bean
     Map<String, PropertyResourceConfigurer> prcs = applicationContext.getBeansOfType(PropertyResourceConfigurer.class);
 
     if (!prcs.isEmpty() && applicationContext instanceof ConfigurableApplicationContext) {

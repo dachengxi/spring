@@ -24,6 +24,7 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
  *
  * @see MapperScannerBeanDefinitionParser
  * @since 1.2.0
+ * 注册用来处理<mybatis:scan/>标签的解析器
  */
 public class NamespaceHandler extends NamespaceHandlerSupport {
 

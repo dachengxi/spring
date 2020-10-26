@@ -61,12 +61,14 @@ public class MapperScannerBeanDefinitionParser extends AbstractBeanDefinitionPar
    */
   @Override
   protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+    // MapperScannerConfigurer类型的Bean定义
     BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(MapperScannerConfigurer.class);
 
     ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
 
     builder.addPropertyValue("processPropertyPlaceHolders", true);
     try {
+      // annotation属性
       String annotationClassName = element.getAttribute(ATTRIBUTE_ANNOTATION);
       if (StringUtils.hasText(annotationClassName)) {
         @SuppressWarnings("unchecked")
@@ -74,17 +76,20 @@ public class MapperScannerBeanDefinitionParser extends AbstractBeanDefinitionPar
             .loadClass(annotationClassName);
         builder.addPropertyValue("annotationClass", annotationClass);
       }
+      // markerInterface属性
       String markerInterfaceClassName = element.getAttribute(ATTRIBUTE_MARKER_INTERFACE);
       if (StringUtils.hasText(markerInterfaceClassName)) {
         Class<?> markerInterface = classLoader.loadClass(markerInterfaceClassName);
         builder.addPropertyValue("markerInterface", markerInterface);
       }
+      // name-generator属性
       String nameGeneratorClassName = element.getAttribute(ATTRIBUTE_NAME_GENERATOR);
       if (StringUtils.hasText(nameGeneratorClassName)) {
         Class<?> nameGeneratorClass = classLoader.loadClass(nameGeneratorClassName);
         BeanNameGenerator nameGenerator = BeanUtils.instantiateClass(nameGeneratorClass, BeanNameGenerator.class);
         builder.addPropertyValue("nameGenerator", nameGenerator);
       }
+      // mapper-factory-bean-class属性
       String mapperFactoryBeanClassName = element.getAttribute(ATTRIBUTE_MAPPER_FACTORY_BEAN_CLASS);
       if (StringUtils.hasText(mapperFactoryBeanClassName)) {
         @SuppressWarnings("unchecked")
@@ -97,9 +102,13 @@ public class MapperScannerBeanDefinitionParser extends AbstractBeanDefinitionPar
       readerContext.error(ex.getMessage(), readerContext.extractSource(element), ex.getCause());
     }
 
+    // template-ref属性
     builder.addPropertyValue("sqlSessionTemplateBeanName", element.getAttribute(ATTRIBUTE_TEMPLATE_REF));
+    // factory-ref属性
     builder.addPropertyValue("sqlSessionFactoryBeanName", element.getAttribute(ATTRIBUTE_FACTORY_REF));
+    // lazy-initialization属性
     builder.addPropertyValue("lazyInitialization", element.getAttribute(ATTRIBUTE_LAZY_INITIALIZATION));
+    // base-package
     builder.addPropertyValue("basePackage", element.getAttribute(ATTRIBUTE_BASE_PACKAGE));
 
     return builder.getBeanDefinition();
