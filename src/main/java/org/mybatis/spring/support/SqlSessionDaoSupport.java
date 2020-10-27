@@ -119,6 +119,7 @@ public abstract class SqlSessionDaoSupport extends DaoSupport {
    */
   @Override
   protected void checkDaoConfig() {
+    // sqlSessionFactory不能为空
     notNull(this.sqlSessionTemplate, "Property 'sqlSessionFactory' or 'sqlSessionTemplate' are required");
   }
 

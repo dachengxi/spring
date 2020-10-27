@@ -471,6 +471,7 @@ public class SqlSessionFactoryBean
 
   /**
    * {@inheritDoc}
+   * 这一步用来初始化SqlSessionFactory
    */
   @Override
   public void afterPropertiesSet() throws Exception {

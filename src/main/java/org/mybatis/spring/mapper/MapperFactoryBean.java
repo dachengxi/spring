@@ -50,6 +50,7 @@ import org.springframework.beans.factory.FactoryBean;
  * @author Eduardo Macarron
  *
  * @see SqlSessionTemplate
+ * 父类的父类实现了InitializingBean接口
  */
 public class MapperFactoryBean<T> extends SqlSessionDaoSupport implements FactoryBean<T> {
 
@@ -70,16 +71,20 @@ public class MapperFactoryBean<T> extends SqlSessionDaoSupport implements Factor
 
   /**
    * {@inheritDoc}
+   * 在afterPropertiesSet方法中会调用此方法
    */
   @Override
   protected void checkDaoConfig() {
+    // 主要检查SqlSessionFactory不能为空
     super.checkDaoConfig();
 
+    // Mapper接口不能为空
     notNull(this.mapperInterface, "Property 'mapperInterface' is required");
 
     Configuration configuration = getSqlSession().getConfiguration();
     if (this.addToConfig && !configuration.hasMapper(this.mapperInterface)) {
       try {
+        // 添加到mapper注册表中，一个接口对应一个MapperProxyFactory
         configuration.addMapper(this.mapperInterface);
       } catch (Exception e) {
         logger.error("Error while adding the mapper '" + this.mapperInterface + "' to configuration.", e);

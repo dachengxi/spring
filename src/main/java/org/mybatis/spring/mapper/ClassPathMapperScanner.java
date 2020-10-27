@@ -191,7 +191,7 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
       LOGGER.warn(() -> "No MyBatis mapper was found in '" + Arrays.toString(basePackages)
           + "' package. Please check your configuration.");
     } else {
-      // 处理扫描到的Bean定义，创建成MapperFactoryBean类型的Bean-
+      // 处理扫描到的Bean定义，创建成MapperFactoryBean类型的Bean
       processBeanDefinitions(beanDefinitions);
     }
 
