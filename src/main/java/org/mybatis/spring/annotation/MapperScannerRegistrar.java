@@ -48,6 +48,7 @@ import org.springframework.util.StringUtils;
  * @see MapperFactoryBean
  * @see ClassPathMapperScanner
  * @since 1.2.0
+ * 处理@MapperScan注解，使用注解来启用mapper扫描注册功能
  */
 public class MapperScannerRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware {
 
@@ -67,15 +68,25 @@ public class MapperScannerRegistrar implements ImportBeanDefinitionRegistrar, Re
    */
   @Override
   public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+    // 获取MapperScan注解上的属性
     AnnotationAttributes mapperScanAttrs = AnnotationAttributes
         .fromMap(importingClassMetadata.getAnnotationAttributes(MapperScan.class.getName()));
     if (mapperScanAttrs != null) {
+      // 根据注解上的信息，扫描注册mapper相关的Bean定义
       registerBeanDefinitions(mapperScanAttrs, registry, generateBaseBeanName(importingClassMetadata, 0));
     }
   }
 
+  /**
+   * 注册Bean定义，类型为：MapperScannerConfigurer
+   * 和MapperScannerBeanDefinitionParser步骤一样
+   * @param annoAttrs
+   * @param registry
+   * @param beanName
+   */
   void registerBeanDefinitions(AnnotationAttributes annoAttrs, BeanDefinitionRegistry registry, String beanName) {
 
+    // 注册类型为MapperScannerConfigurer的Bean定义
     BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(MapperScannerConfigurer.class);
     builder.addPropertyValue("processPropertyPlaceHolders", true);
 
@@ -126,6 +137,7 @@ public class MapperScannerRegistrar implements ImportBeanDefinitionRegistrar, Re
 
     builder.addPropertyValue("basePackage", StringUtils.collectionToCommaDelimitedString(basePackages));
 
+    // 注册Bean定义
     registry.registerBeanDefinition(beanName, builder.getBeanDefinition());
 
   }
